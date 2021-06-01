@@ -1,0 +1,24 @@
+--Основной путь
+%workFolder%\
+
+--Путь к папке с шаблонами
+%workFolder%\Temps
+	--Доки
+		%workFolder%\Temps\DocRep
+	--В Инфобип
+		%workFolder%\Temps\ToInfobip
+	--На почту
+		%workFolder%\Temps\ToPost
+		
+--Путь к папке с информированиями
+%workFolder%\Infs\%InfName%\
+	--Из ТФОМС
+	%workFolder%\Infs\%InfName%\FromTFOMS
+	--В Инфобип
+	%workFolder%\Infs\%InfName%\ToInfobip
+	--На почту
+	%workFolder%\Infs\%InfName%\ToPost
+	--В ТФОМС
+	%workFolder%\Infs\%InfName%\ToTFOMS
+--	
+	
