@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
-  Vcl.DBCtrls, Vcl.Mask, FileCtrl, Unit1;
+  Vcl.DBCtrls, Vcl.Mask, FileCtrl, IOUtils, Unit1;
 
 type
   TForm2 = class(TForm)
@@ -40,6 +40,8 @@ type
     procedure TfomsButtonClick(Sender: TObject);
     function IsDublInf(InfName:string):boolean;
     function IsDublTypeInf(InfType:string):boolean;
+    function CpTfomsFile(tfomsfpath:string;InfName:string):boolean;
+    procedure CreateNewTask;
   private
     { Private declarations }
   public
@@ -222,7 +224,7 @@ with StartTaskForm do begin
    ADOQueryStart.open;
     if InfType=trimright(adoquerystart.FieldByName('type').AsString) then
         begin
-         if adoquerystart.FieldByName('status_code').AsString<>'301' then result := true
+         if TrimRight(adoquerystart.FieldByName('status_code').AsString)<>'301' then result := true
             else  result := false;
         end
      else result := false;
@@ -231,9 +233,50 @@ with StartTaskForm do begin
 end;
 
 
-procedure CreateNewTask;
+procedure TForm2.CreateNewTask;
 begin
-//Создать новое задание
+   with mainform do
+            begin
+             ADOStoredProc.ProcedureName:='new_Task';
+             ADOStoredProc.Parameters.Refresh;
+             ADOStoredProc.Parameters.ParamByName('@Inf_id').Value:=Random(100000);
+             ADOStoredProc.Parameters.ParamByName('@name').Value:=NameEdit.Text;
+             ADOStoredProc.Parameters.ParamByName('@type').Value:=TypeCombobox.Text;
+             ADOStoredProc.Parameters.ParamByName('@up_date').Value:=now;
+             ADOStoredProc.Parameters.ParamByName('@status_code').Value:= 101;
+             ADOStoredProc.Parameters.ParamByName('@Tfoms_path').Value:=tfomsfile.Text;
+              if not monthdiapcheck.Checked then
+               begin
+                ADOStoredProc.Parameters.ParamByName('@MounthAt').Value:= MonthCombo.Text;
+                ADOStoredProc.Parameters.ParamByName('@MounthTo').Value:= MonthCombo.Text;
+               end
+                else
+                  begin
+                    ADOStoredProc.Parameters.ParamByName('@MounthAt').Value:= MonthAtCombo.Text;
+                    ADOStoredProc.Parameters.ParamByName('@MounthTo').Value:= MonthToCombo.Text;
+                  end;
+               ADOStoredProc.ExecProc;
+               AdOQuery.Close;
+               ADOQuery.Open;
+            end;
+end;
+
+function TForm2.CpTfomsFile(tfomsfpath:string;InfName:string):boolean;
+var pth:string;
+begin
+with StartTaskForm do begin
+   ADOQueryStart.close;
+   ADOQueryStart.SQL.Clear;
+   ADOQueryStart.SQL.Text:='declare @pth varchar(100)=(select useNetWD from settings) SELECT CASE @pth When 0 Then WDpth When 1 Then WDNetpth end as pth from settings';
+   ADOQueryStart.open;
+   pth:=adoquerystart.FieldByName('pth').AsString;
+   ADOQueryStart.close;
+ end;
+  TDirectory.CreateDirectory(pth+'\Оповещения\'+InfName);
+
+  if not CopyFile(PChar(tfomsfpath), PChar(pth+'\Оповещения\'+InfName+'\'+extractfilename(tfomsfpath)), false)
+   then  messagedlg( 'Невозможно скопировать файл "'+extractfilename(tfomsfpath)+'" в рабочуу папку. '+SysErrorMessage(GetLastError) , mtError, [mbOk], 0, mbOk);
+
 end;
 
 procedure TForm2.OkButtonClick(Sender: TObject);
@@ -244,32 +287,10 @@ begin
       if IsDublTypeInf(typecombobox.Text) then messagedlg('Перед началом нового информирования '+typecombobox.Text+' необходимо прошлое перенести в архив!' , mtError, [mbOk], 0, mbOk)
         else begin
        if not IsDublInf (NameEdit.Text) then begin
-        with mainform do
-         begin
-          ADOStoredProc.ProcedureName:='new_Task';
-          ADOStoredProc.Parameters.Refresh;
-          ADOStoredProc.Parameters.ParamByName('@Inf_id').Value:=Random(100000);
-          ADOStoredProc.Parameters.ParamByName('@name').Value:=NameEdit.Text;
-          ADOStoredProc.Parameters.ParamByName('@type').Value:=TypeCombobox.Text;
-          ADOStoredProc.Parameters.ParamByName('@up_date').Value:=now;
-          ADOStoredProc.Parameters.ParamByName('@status_code').Value:= 101;
-          ADOStoredProc.Parameters.ParamByName('@Tfoms_path').Value:=tfomsfile.Text;
-
-         if not monthdiapcheck.Checked then
-          begin
-            ADOStoredProc.Parameters.ParamByName('@MounthAt').Value:= MonthCombo.Text;
-            ADOStoredProc.Parameters.ParamByName('@MounthTo').Value:= MonthCombo.Text;
-          end
-            else
-              begin
-                ADOStoredProc.Parameters.ParamByName('@MounthAt').Value:= MonthAtCombo.Text;
-                ADOStoredProc.Parameters.ParamByName('@MounthTo').Value:= MonthToCombo.Text;
-              end;
-          ADOStoredProc.ExecProc;
-          AdOQuery.Close;
-          ADOQuery.Open;
-         end;
+         CpTfomsFile(Tfomsfile.Text,nameedit.Text);
+         CreateNewTask;
          form2.Close;
+         MainForm.StatusBar.Panels[0].Text:='Новое оповещение с именем '+nameedit.Text+' cоздано успешно!';
         end else messagedlg( 'Оповещение с таким именем уже существует!' , mtError, [mbOk], 0, mbOk);
        end;
       end;

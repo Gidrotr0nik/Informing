@@ -54,7 +54,8 @@ end;
 
 procedure TAboutForm.urlLinkClick(Sender: TObject);
 begin
-ShellExecute(handle, 'open', 'https://www.gnu.org/licenses/gpl-3.0.txt', nil, nil, SW_SHOW);
+  ShellExecute(handle, 'open', 'https://github.com/Gidrotr0nik/Informing_', nil, nil, SW_SHOW);
+
 end;
 
 end.

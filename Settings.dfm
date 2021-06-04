@@ -29,7 +29,7 @@ object SettingsForm: TSettingsForm
     Left = 381
     Top = 469
     Width = 115
-    Height = 35
+    Height = 40
     Caption = #1055#1088#1080#1084#1077#1085#1080#1090#1100' '
     Glyph.Data = {
       0A0B0000424D0A0B00000000000036000000280000001C000000210000000100
@@ -128,7 +128,7 @@ object SettingsForm: TSettingsForm
     Left = 257
     Top = 469
     Width = 115
-    Height = 35
+    Height = 40
     Caption = #1047#1072#1082#1088#1099#1090#1100
     Glyph.Data = {
       66090000424D660900000000000036000000280000001C0000001C0000000100
@@ -383,6 +383,7 @@ object SettingsForm: TSettingsForm
           Width = 394
           Height = 52
           BorderStyle = bsNone
+          Color = clBtnFace
           Enabled = False
           Lines.Strings = (
             
@@ -403,6 +404,7 @@ object SettingsForm: TSettingsForm
           Width = 394
           Height = 79
           BorderStyle = bsNone
+          Color = clBtnFace
           Enabled = False
           Lines.Strings = (
             
@@ -427,6 +429,7 @@ object SettingsForm: TSettingsForm
           Width = 379
           Height = 88
           BorderStyle = bsNone
+          Color = clBtnFace
           Enabled = False
           Lines.Strings = (
             
@@ -493,6 +496,7 @@ object SettingsForm: TSettingsForm
           Width = 329
           Height = 27
           BorderStyle = bsNone
+          Color = clBtnFace
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clRed
           Font.Height = -11
@@ -684,6 +688,7 @@ object SettingsForm: TSettingsForm
         Width = 394
         Height = 80
         BorderStyle = bsNone
+        Color = clBtnFace
         Enabled = False
         Lines.Strings = (
           

@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.ExtCtrls, Vcl.ComCtrls,
   Vcl.DBCGrids, Vcl.WinXPanels, Data.DB, Vcl.Grids, Vcl.DBGrids, Data.Win.ADODB,
   ADOQuery1, ADOConnection1, Vcl.Buttons, ADOStoredProc1, Vcl.StdCtrls,
-  Vcl.ValEdit, Vcl.DBCtrls, Registry,ComObj;
+  Vcl.ValEdit, Vcl.DBCtrls, Registry,ComObj,UITypes;
 
 type
   TMainForm = class(TForm)
@@ -75,6 +75,7 @@ type
     procedure N17Click(Sender: TObject);
     function checksettings:boolean;
     procedure AddColoredLine(ARichEdit: TRichEdit; AText: string; AColor: TColor);
+    procedure BDConn;
   private
     { Private declarations }
   public
@@ -103,7 +104,7 @@ with starttaskform do
    //ADOQueryStart.SQL.Add();
    ADOQueryStart.Open;
    if ADOQueryStart.Fields[0].AsString='1' then
-   result:=True   else result:=false;
+   result:=True else result:=false;
  end;
 end;
 
@@ -217,7 +218,7 @@ while i <= MainDBGrid.Columns.Count - 3 do
 
 function TMainForm.checksettings:boolean;
 begin
-Statmemo.Clear;
+//Statmemo.Clear;
 
 result:=true;
 
@@ -300,19 +301,22 @@ if settingsform.adoqueryset.FieldByName('useNetWD').AsString='1' then
   end;
 end;
 
-
+procedure TMainForm.BDConn;
+begin
+ if CheckDBConn then AddColoredLine(statmemo,'Соединение с БД - УСПЕШНО!', clGreen)
+  else begin
+    infmemo.Clear;
+    infsstatmemo.Lines.Add('Невозможно получить статистику!');
+    AddColoredLine(statmemo,'Нет связи с БД! ОШИБКА!', clRed);
+    infmemo.Lines.Add('Нет данных!');
+  end;
+end;
 
 procedure TMainForm.FormShow(Sender: TObject);
 begin
-//  AddColoredLine(statmemo, 'Hallo', clRed);
+Statmemo.Clear;
  //Проверка соединения с БД
-if CheckDBConn then AddColoredLine(statmemo,'Соединение с БД - УСПЕШНО!', clGreen)
-else begin
-   infmemo.Clear;
-   infsstatmemo.Lines.Add('Невозможно получить статистику!');
-   AddColoredLine(statmemo,'Нет связи с БД! ОШИБКА!', clRed);
-   infmemo.Lines.Add('Нет данных!');
-  end;
+    BDConn;
   //Проверка настроек
      checksettings;
 
@@ -321,7 +325,7 @@ end;
 procedure TMainForm.MainDBGridDrawColumnCell(Sender: TObject; const Rect: TRect;
   DataCol: Integer; Column: TColumn; State: TGridDrawState);
 begin
- //  Отрисовка строк в главной таблице
+   //Отрисовка строк в главной таблице
   {
    with  MainDBGrid.Canvas do
   	begin
@@ -329,7 +333,7 @@ begin
 	  	Font.Color:=clWhite;
       FillRect(Rect);
 		  TextOut(Rect.Left+2,Rect.Top+2,Column.Field.Text);
-  end;}
+  end;   }
 end;
 
 procedure TMainForm.N12Click(Sender: TObject);
@@ -361,7 +365,8 @@ end;
 
 procedure TMainForm.N8Click(Sender: TObject);
 begin
-
+ Statmemo.Clear;
+  BDConn;
 if not checksettings then
   begin
     viewnotebook.PageIndex:=0;

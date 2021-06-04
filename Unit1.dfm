@@ -456,7 +456,7 @@ object MainForm: TMainForm
         OnClick = N12Click
       end
       object NewTeskButton: TSpeedButton
-        Left = 1
+        Left = 0
         Top = 1
         Width = 40
         Height = 35
@@ -732,6 +732,8 @@ object MainForm: TMainForm
           Left = 0
           Top = 0
           Caption = 'ControlPanel'
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object MainDBGrid: TDBGrid
             AlignWithMargins = True
             Left = 3

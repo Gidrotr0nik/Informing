@@ -385,7 +385,7 @@ object Form2: TForm2
         Width = 208
         Height = 75
         BorderStyle = bsNone
-        Color = clMenu
+        Color = clBtnFace
         Enabled = False
         Lines.Strings = (
           #1060#1072#1081#1083' '#1073#1091#1076#1077#1085' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080' '#1089#1082#1086#1087#1080#1088#1086#1074#1072#1085

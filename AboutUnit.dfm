@@ -353,12 +353,12 @@ object AboutForm: TAboutForm
       00000049454E44AE426082}
   end
   object urlLink: TLabel
-    Left = 46
-    Top = 101
-    Width = 204
+    Left = 182
+    Top = 102
+    Width = 102
     Height = 16
     Cursor = crHandPoint
-    Caption = #1057#1089#1099#1083#1082#1072' '#1085#1072' '#1086#1092#1080#1094#1080#1072#1083#1100#1085#1099#1081' '#1090#1077#1082#1089#1090
+    Caption = #1048#1089#1093#1086#1076#1085#1099#1081' '#1082#1086#1076' '
     Font.Charset = RUSSIAN_CHARSET
     Font.Color = clNavy
     Font.Height = -12
@@ -385,6 +385,7 @@ object AboutForm: TAboutForm
       '')
     ParentFont = False
     TabOrder = 0
+    OnClick = AboutMemoClick
   end
   object OKButt: TBitBtn
     Left = 101

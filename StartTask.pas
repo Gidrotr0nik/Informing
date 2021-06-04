@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Data.DB, Data.Win.ADODB,
   ADOConnection1, ADOQuery1, ADOStoredProc1, Vcl.DBCtrls, Vcl.Buttons,
-  Vcl.ComCtrls, Vcl.TabNotBk, Vcl.ExtCtrls, TypInfo;
+  Vcl.ComCtrls, Vcl.TabNotBk, Vcl.ExtCtrls, TypInfo, Clipbrd, UITypes;
 
 type
   TStartTaskForm = class(TForm)
@@ -14,7 +14,7 @@ type
     DataSourceStart: TDataSource;
     ADOQueryStart: TADOQuery1;
     ADOConnStart: TADOConnection1;
-    TabbedNotebook1: TTabbedNotebook;
+    WorkingTabNote: TTabbedNotebook;
     GroupBox2: TGroupBox;
     GroupBox1: TGroupBox;
     YesButton: TSpeedButton;
@@ -26,15 +26,32 @@ type
     InfNamewrkLabel: TDBText;
     NoButton: TSpeedButton;
     SaveBut: TSpeedButton;
+    GroupBox4: TGroupBox;
+    ArchNameLabel: TLabel;
+    Archedit: TEdit;
+    ArchHelpText: TMemo;
+    AddArchButton: TSpeedButton;
     procedure ExitButtonClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    function  IsSomeFiles(s:string):tstringlist;
-    function CreateInfList(tfomsfilename:string):boolean;
+    procedure CreateInfList(tfomsfilename:string;rename:boolean;oldexist:boolean;tname:string;tCode:integer);
     procedure YesButtonClick(Sender: TObject);
     procedure NoButtonClick(Sender: TObject);
     procedure SaveButClick(Sender: TObject);
-
+    procedure Stat_101_worker;
+    procedure Stat_111_worker;
+    procedure Stat_201_worker;
+    procedure Stat_211_worker;
+    procedure Stat_221_worker;
+    procedure Stat_300_worker;
+    procedure Stat_301_worker;
+    procedure Stat_600_worker;
+    procedure WorkingTabNoteChange(Sender: TObject; NewTab: Integer;
+      var AllowChange: Boolean);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure AddArchButtonClick(Sender: TObject);
+    function GetTfomsPath(userpth:string):string;
+    procedure FullInfList(tcode:integer);
   private
     { Private declarations }
   public
@@ -43,7 +60,7 @@ type
 
 var
   StartTaskForm: TStartTaskForm;
-  moreOneF:boolean;
+  stcode:integer;
 
 implementation
 
@@ -55,6 +72,11 @@ Unit1;
 procedure TStartTaskForm.ExitButtonClick(Sender: TObject);
 begin
 starttaskform.Close;
+end;
+
+procedure TStartTaskForm.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+workingtabnote.PageIndex:=0;
 end;
 
 procedure TStartTaskForm.FormCreate(Sender: TObject);
@@ -72,52 +94,25 @@ begin
 //Установка рабочего информирования
     infNamewrklabel.DataSource:=MainForm.DataSource;
     infNamewrklabel.DataField:='Имя оповещения';
-//Больше одного файла из ТФОМС по умолчанию - ЛОЖЬ
-moreOneF:=false;
 end;
 
-function TStartTaskForm.IsSomeFiles(s:string):tstringlist;
-var
-ress:tstringlist;
-k,i:integer;
-firsttime:boolean;
-st:string;
-begin
- ress:=tstringlist.create;
-firsttime:=true;
-k:=0;
-for i:=1 to Length(s) do begin
-if s[i]='|' then
-	begin
- 	 if firsttime then
-    begin
-     ress.add(copy(s,1,i-1));
-     firsttime:=false;
-     k:=i;
-    end
-    	else begin
-       ress.add(copy(s,k+1,i-pos('|',s,k)-1));
-       k:=i;
-     end;
-	end;
- end;
- result:=ress;
-end;
 
 procedure TStartTaskForm.NoButtonClick(Sender: TObject);
 var ind:integer;
 begin
 ind:=statmemo.lines.count-1;
  if statmemo.Lines[ind] = 'Все готово для начала информирования, запустить немедленно?'
-  then statmemo.lines.Add('Создание новой структуры отменено...');
+    then statmemo.lines.Add('Создание новой структуры отменено...');
 
   if statmemo.Lines[ind] = 'Игнорировать и перезаписать структуру?'
-  then
-    statmemo.lines.Add('Сохранить существующую структуру под другим именем?');
+    then statmemo.lines.Add('Сохранить существующую структуру под другим именем?');
 
   if statmemo.Lines[ind] = 'Сохранить существующую структуру под другим именем?'
-  then
-    statmemo.lines.Add('Создание новой структуры отменено...');
+    then statmemo.lines.Add('Создание новой структуры отменено...');
+
+  if statmemo.Lines[ind] = 'Хотите создать список сейчас?'
+      then statmemo.lines.Add('Создание списка оповещения отменено...');
+
 
 end;
 
@@ -138,59 +133,181 @@ end;
 
 end;
 
+function TStartTaskForm.GetTfomsPath(userpth:string):string;
+var fname:string;
+begin
+fname:=extractfilename(userpth);
+ ADOQueryStart.Close;
+ ADOQueryStart.SQL.Text:='select WDpth from settings';
+ ADOQueryStart.Open;
+
+result:=adoquerystart.FieldByName('WDpth').AsString+'\Оповещения\'+TrimRight(infnamewrklabel.Caption)+'\'+fname;
+end;
+
+procedure TStartTaskForm.FullInfList(tcode:integer);
+var tproc,mat,mto:string;
+begin
+ ADOQueryStart.Close;
+ ADOQueryStart.SQL.Text:='select tproc from sp_type where tcode='+inttostr(tcode);
+ ADOQueryStart.Open;
+ tproc:=adoquerystart.FieldByName('tproc').AsString;
+
+ ADOQueryStart.Close;
+ ADOQueryStart.SQL.Text:='select * from infs where name='''+infnamewrklabel.Caption+'''';
+ ADOQueryStart.Open;
+  mat:=adoquerystart.FieldByName('MounthAt').AsString;
+  mto:=adoquerystart.FieldByName('MounthTo').AsString;
+
+   statmemo.lines.Add('Создание списка информирования...');
+   statmemo.lines.Add('Пожалуйста подождите это займет несколько минут...');
+
+   ADOStoredProcStart.ProcedureName:= Trim(tproc);
+       ADOStoredProcStart.Parameters.Refresh;
+       ADOStoredProcStart.Parameters.ParamByName('@mounthAt').Value:=mat;
+       ADOStoredProcStart.Parameters.ParamByName('@mounthTo').Value:=mto;
+       application.ProcessMessages;
+       ADOStoredProcStart.ExecProc;
+
+
+     adoquerystart.Close;
+     ADOQueryStart.SQL.Clear;
+     ADOQueryStart.SQL.text:='update infs set status_code=''201'' where name='''+infnamewrklabel.Caption+''' select 1';
+     ADOQueryStart.Open;
+
+   statmemo.lines.Add('Создание списка успешно завершено!');
+   MainForm.StatusBar.Panels[0].Text:='Список оповещения '+TrimRight(infnamewrklabel.Caption)+' создан успешно!';
+   messagedlg( 'Список оповещения '+Trim(infnamewrklabel.Caption)+' Успешно создан!' , mtInformation, [mbOk], 0, mbOk);
+
+  StartTaskForm.Close;
+  mainform.ADOQuery.Close;
+  mainform.ADOQuery.open;
+end;
+
+
 procedure TStartTaskForm.YesButtonClick(Sender: TObject);
-var ind:integer;
+var ind,tcode:integer;
+tname,tpath:string;
 begin
 ind:=statmemo.lines.count-1;
+ADOQueryStart.Close;
+ADOQueryStart.SQL.Text:='select * from Infs ins left join sp_status ss on ins.status_code=ss.st_code left join sp_type sps on ins.[type]=sps.[tname] where name='''+infnamewrklabel.Caption+'''';
+ADOQueryStart.Open;
+tname:=adoquerystart.FieldByName('tremark').AsString;
+tpath:=adoquerystart.FieldByName('Tfoms_path').AsString;
+tcode:=adoquerystart.FieldByName('tcode').AsInteger;
+// Новое - статус 101
  if statmemo.Lines[ind] = 'Все готово для начала информирования, запустить немедленно?'
-  then statmemo.lines.Add('Создание новой структуры оповещения...');
+  then CreateInfList(GetTfomsPath(tpath),false,false,Trim(tname),tcode);
 
-  if statmemo.Lines[ind] = 'Игнорировать и перезаписать структуру?'
-  then begin
-    statmemo.lines.Add('Удаление старой структуры...');
-    statmemo.lines.Add('Создание новой структуры информирования...');
-  end;
+ if statmemo.Lines[ind] = 'Игнорировать и перезаписать структуру?'
+  then CreateInfList(GetTfomsPath(tpath),false,true,Trim(tname),tcode);
 
-    if statmemo.Lines[ind] = 'Сохранить существующую структуру по другим именем?'
-      then begin
-        statmemo.lines.Add('Сохранение структуры по другим именем...');
-        statmemo.lines.Add('Создание новой структуры информирования...');
-       end;
+ if statmemo.Lines[ind] = 'Сохранить существующую структуру под другим именем?'
+  then CreateInfList(GetTfomsPath(tpath),true,true,Trim(tname),tcode);
+
+// Запущено - статус 111
+  if statmemo.Lines[ind] = 'Хотите создать список сейчас?'
+      then FullInfList(tcode);
+
 end;
 
-function  TStartTaskForm.CreateInfList(tfomsfilename:string):boolean;
-var nowdate:string;
-tes:boolean;
+procedure TStartTaskForm.AddArchButtonClick(Sender: TObject);
+var tnm,id:string;
 begin
-     { nowdate:='test';
-      ADOQueryStart.Close;
-     //Если нет таблицы создаем переносим из файла ТФОМС если есть переименуется
-      ADOQueryStart.SQL.Add('if not exists (select * from sysobjects where name=''inf_disp'' and xtype=''U'') SELECT * INTO Inf_Disp FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'',''Excel 12.0; Database='+tfomsfilename+''', ''select * from [Лист1$A5:BZ]'') else exec sp_rename ''Inf_Disp'', ''Inf_Disp_'+nowdate+'''');
-     //  ADOQueryStart.SQL.Add('delete from Inf_Disp where [№_п/п] is null');
-       ADOQueryStart.Open;  }
-end;
-
-procedure TStartTaskForm.FormShow(Sender: TObject);
-var inftype:string;
-begin
-
-if infnamewrklabel.Caption<>'' then
-   begin
-   statmemo.lines.Clear;
-   statmemo.lines.Add('Выбрано оповещение: '+TrimRight(infnamewrklabel.Caption));
-   ADOQueryStart.SQL.Clear;
+if Archedit.text<>'' then
+  begin
    ADOQueryStart.Close;
-   //Проверка на наличие нескольких файлов
-   ADOQueryStart.SQL.Add('select * from Infs ins left join sp_status ss on ins.status_code=ss.st_code left join sp_type sps on ins.[type]=sps.[tname] where name='''+infnamewrklabel.Caption+'''');
+   ADOQueryStart.SQL.Text:='select tremark,inf_id from Infs ins left join sp_type sps on ins.[type]=sps.[tname] where name='''+infnamewrklabel.Caption+'''';
    ADOQueryStart.Open;
-      if IsSomeFiles(ADOQueryStart.FieldByName('Tfoms_path').AsString).Count>0 then
-         moreOneF:=true;
-      //Заполнение информационного поля
-        statmemo.lines.Add('Статус оповещения: '+ADOQueryStart.FieldByName('st_name').AsString);
-     //Проверка статуса оповещзения
-      if adoquerystart.FieldByName('st_code').AsInteger = 101
-       then statmemo.lines.Add('Рабочяя структура оповещения не создана...');
-      //Проверка на наличие старой таблицы
+
+   tnm:=adoquerystart.FieldByName('tremark').AsString;
+   id:=adoquerystart.FieldByName('inf_id').AsString;
+   tnm:=TrimRight(tnm);
+
+   ADOQueryStart.Close;
+   ADOQueryStart.SQL.Text:='exec sp_rename '''+tnm+''','''+tnm+'_'+Archedit.text+'_'+id+''' select 1';
+   ADOQueryStart.Open;
+
+   ADOQueryStart.Close;
+   ADOQueryStart.SQL.Text:='update infs set status_code=301 where name='''+infnamewrklabel.Caption+''' select 1';
+   ADOQueryStart.Open;
+
+   StartTaskForm.Close;
+   MainForm.StatusBar.Panels[0].Text:='Оповещение '+TrimRight(infnamewrklabel.Caption)+' перенесено в архив успешно!';
+   messagedlg( 'Оповещение '+infnamewrklabel.Caption+' Успешно перенесено в архив!' , mtInformation, [mbOk], 0, mbOk);
+   mainform.ADOQuery.Close;
+   mainform.ADOQuery.Open;
+  end
+    else messagedlg( 'Имя не может быть пустым! Введите имя таблицы.' , mtError, [mbOk], 0, mbOk);
+end;
+
+procedure  TStartTaskForm.CreateInfList(tfomsfilename:string;rename:boolean;oldexist:boolean;tname:string;tCode:integer);
+var nowdate,renamer:string;
+    tes:boolean;
+begin
+      nowdate:=FormatDateTime('dd_mm_yyyy', Now);
+      ADOQueryStart.Close;
+
+      if oldexist then
+        begin
+          if rename then
+                      begin
+                        statmemo.lines.Add('Сохранение структуры по другим именем...');
+                        renamer:='exec sp_rename '''+tname+''','''+tname+'_'+nowdate+''' select 1';
+                        statmemo.lines.Add('Структура успешно переименована в '+tname+'_'+nowdate);
+                      end
+            else
+              begin
+                statmemo.lines.Add('Удаление старой структуры...');
+                renamer:='drop table '+tname+' select 1';
+              end;
+        end
+         else renamer:='select 1';
+
+
+
+      adoquerystart.Close;
+        ADOQueryStart.SQL.Clear;
+        ADOQueryStart.SQL.add(renamer);
+      ADOQueryStart.Open;
+
+   
+       statmemo.lines.Add('Создание новой структуры оповещения...');
+       statmemo.lines.Add('Пожалуйста подождите это займет несколько минут...');
+
+    application.ProcessMessages;
+    starttaskform.Cursor:=crHourGlass;
+       ADOStoredProcStart.ProcedureName:='CreateStruct';
+       ADOStoredProcStart.Parameters.Refresh;
+       ADOStoredProcStart.Parameters.ParamByName('@TfomsFile').Value:=tfomsfilename;
+       ADOStoredProcStart.Parameters.ParamByName('@Tcode').Value:=tCode;
+     application.ProcessMessages;
+       ADOStoredProcStart.ExecProc;
+
+    application.ProcessMessages;
+
+     adoquerystart.Close;
+     ADOQueryStart.SQL.Clear;
+     ADOQueryStart.SQL.text:='update infs set status_code=''111'' where name='''+infnamewrklabel.Caption+''' select 1';
+     ADOQueryStart.Open;
+
+    starttaskform.Cursor:=crDefault;
+    statmemo.lines.Add('Создание структуры успешно завершено!');
+
+
+
+   MainForm.StatusBar.Panels[0].Text:='Новая структура для оповещения '+TrimRight(infnamewrklabel.Caption)+' создана успешно!';
+   messagedlg( 'Структура для '+infnamewrklabel.Caption+' Успешно создана!' , mtInformation, [mbOk], 0, mbOk);
+
+  StartTaskForm.Close;
+  mainform.ADOQuery.Close;
+  mainform.ADOQuery.open;
+end;
+
+procedure TStartTaskForm.Stat_101_worker;
+begin
+statmemo.lines.Add('Рабочяя структура оповещения не создана...');
+    //Проверка на наличие старой таблицы
       if MainForm.CheckTableExist(adoquerystart.FieldByName('tremark').AsString) then
        begin
         statmemo.lines.Add('Найдена структура другого оповещения...');
@@ -199,8 +316,127 @@ if infnamewrklabel.Caption<>'' then
         else
          begin
           statmemo.lines.Add('Все готово для начала информирования, запустить немедленно?');
-
          end;
+end;
+
+
+procedure TStartTaskForm.Stat_111_worker;
+begin
+statmemo.lines.Add('Список информимрование не найден.');
+statmemo.lines.Add('Хотите создать список сейчас?');
+end;
+
+procedure TStartTaskForm.Stat_201_worker;
+begin
+ //code
+end;
+
+procedure TStartTaskForm.Stat_211_worker;
+begin
+//code
+end;
+
+procedure TStartTaskForm.Stat_221_worker;
+begin
+//code
+end;
+
+procedure TStartTaskForm.Stat_300_worker;
+begin
+statmemo.lines.Add('Рекомендуется перевести данное оповещение в архив.');
+end;
+
+procedure TStartTaskForm.Stat_301_worker;
+begin
+  //code
+end;
+
+procedure TStartTaskForm.Stat_600_worker;
+begin
+  //code
+end;
+
+procedure TStartTaskForm.WorkingTabNoteChange(Sender: TObject; NewTab: Integer;
+  var AllowChange: Boolean);
+begin
+ if (stcode=101) or (stcode=111) then
+  begin
+      if (NewTab = 1) or (NewTab = 2) or (NewTab = 3) or (NewTab = 4)  then
+        messagedlg( 'Невозможно перейти к следующему этапу пока не завершен настоящий!' , mtWarning, [mbOk], 0, mbOk);
+    AllowChange := not (NewTab = 1) and not (NewTab = 2) and not (NewTab = 3) and not (NewTab = 4);
+  end;
+
+  if stcode=201 then
+  begin
+     if (NewTab = 2) or (NewTab = 3) or (NewTab = 4)  then
+       messagedlg( 'Невозможно перейти к следующему этапу пока не завершен настоящий!' , mtWarning, [mbOk], 0, mbOk);
+    AllowChange := not (NewTab = 2) and not (NewTab = 3) and not (NewTab = 4);
+  end;
+
+  if stcode=211 then
+  begin
+     if (NewTab = 3) or (NewTab = 4)  then
+       messagedlg( 'Невозможно перейти к следующему этапу пока не завершен настоящий!' , mtWarning, [mbOk], 0, mbOk);
+    AllowChange := not (NewTab = 3) and not (NewTab = 4);
+  end;
+
+  if stcode=221 then
+  begin
+     if NewTab = 4  then
+      messagedlg( 'Невозможно перейти к следующему этапу пока не завершен настоящий!' , mtWarning, [mbOk], 0, mbOk);
+     AllowChange :=  not (NewTab = 4);
+  end;
+
+  if stcode=301 then
+  begin
+      if  NewTab = 4  then
+        messagedlg( 'Невозможно перенести в архив! Оповещение уже находится в архиве.' , mtWarning, [mbOk], 0, mbOk);
+    AllowChange :=  not (NewTab = 4);
+  end;
+end;
+
+procedure TStartTaskForm.FormShow(Sender: TObject);
+var inftype:string;
+
+begin
+workingtabnote.PageIndex:=0;
+if infnamewrklabel.Caption<>'' then
+   begin
+    statmemo.lines.Clear;
+    statmemo.lines.Add('Выбрано оповещение: '+TrimRight(infnamewrklabel.Caption));
+
+    ADOQueryStart.Close;
+    ADOQueryStart.SQL.Text:='select * from Infs ins left join sp_status ss on ins.status_code=ss.st_code left join sp_type sps on ins.[type]=sps.[tname] where name='''+infnamewrklabel.Caption+'''';
+    ADOQueryStart.Open;
+    stcode:=adoquerystart.FieldByName('st_code').AsInteger;
+   //Заполнение информационного поля
+    statmemo.lines.Add('Статус оповещения: '+ADOQueryStart.FieldByName('st_name').AsString);
+
+   //Проверка статуса оповещзения
+     if stcode = 101
+       then Stat_101_worker;
+
+     if stcode = 111
+        then Stat_111_worker;
+
+     if stcode = 201
+       then Stat_201_worker;
+
+     if stcode = 211
+       then Stat_211_worker;
+
+     if stcode = 221
+       then Stat_221_worker;
+
+     if stcode = 300
+       then Stat_300_worker;
+
+     if stcode = 301
+       then Stat_301_worker;
+
+     if stcode = 600
+       then Stat_600_worker;
+
    end
     else statmemo.lines.Add('Оповещение не выбрано!') ;
 end;

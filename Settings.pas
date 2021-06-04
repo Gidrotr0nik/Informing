@@ -399,7 +399,7 @@ if MainForm.CheckDBConn then
           if  messagedlg( 'Настройки успешно сохранены.'#13#10'Хотите закрыть окно?' , mtConfirmation,  [mbYes,mbNo], 0)=6 //Выключить кнопку
                 then  settingsform.Close;
 
-             MainForm.StatusBar.Panels[0].Text:='Изменение настроек приложения завершено успешно.'   //Задаем статус на панели главной формы
+             MainForm.StatusBar.Panels[0].Text:='Изменение настроек приложения завершено успешно!'   //Задаем статус на панели главной формы
 
              end
            else //Если проверка на корректность заполнения не пройдена
