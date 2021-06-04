@@ -10,10 +10,12 @@ uses
 type
   TAboutForm = class(TForm)
     AboutImage: TImage;
-    AboutMemo: TMemo;
     OKButt: TBitBtn;
     urlLink: TLabel;
     AboutMemoFull: TMemo;
+    Panel1: TPanel;
+    Panel2: TPanel;
+    AboutMemo: TMemo;
     procedure OKButtClick(Sender: TObject);
     procedure urlLinkClick(Sender: TObject);
     procedure AboutMemoClick(Sender: TObject);

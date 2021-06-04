@@ -174,11 +174,6 @@ result:=false;
       end;
 end;
 
-function CheckSvod:boolean;
-begin
-  //Проверка свода
-end;
-
 procedure TMainForm.FormCreate(Sender: TObject);
 var i:integer;
 begin

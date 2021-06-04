@@ -7,15 +7,15 @@ object AboutForm: TAboutForm
   ClientWidth = 312
   Color = clBtnFace
   TransparentColor = True
-  Font.Charset = DEFAULT_CHARSET
+  Font.Charset = RUSSIAN_CHARSET
   Font.Color = clWindowText
-  Font.Height = -13
-  Font.Name = 'Tahoma'
+  Font.Height = -11
+  Font.Name = 'Verdana'
   Font.Style = []
   OldCreateOrder = False
   Position = poScreenCenter
   PixelsPerInch = 96
-  TextHeight = 16
+  TextHeight = 13
   object AboutImage: TImage
     Left = 9
     Top = 1
@@ -355,37 +355,18 @@ object AboutForm: TAboutForm
   object urlLink: TLabel
     Left = 182
     Top = 102
-    Width = 102
+    Width = 98
     Height = 16
     Cursor = crHandPoint
     Caption = #1048#1089#1093#1086#1076#1085#1099#1081' '#1082#1086#1076' '
+    Enabled = False
     Font.Charset = RUSSIAN_CHARSET
-    Font.Color = clNavy
-    Font.Height = -12
-    Font.Name = 'System'
+    Font.Color = clBlack
+    Font.Height = -13
+    Font.Name = 'Tahoma'
     Font.Style = [fsBold]
     ParentFont = False
     OnClick = urlLinkClick
-  end
-  object AboutMemo: TMemo
-    Left = 19
-    Top = 75
-    Width = 265
-    Height = 25
-    BorderStyle = bsNone
-    Color = clBtnFace
-    Enabled = False
-    Font.Charset = RUSSIAN_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -13
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold, fsUnderline]
-    Lines.Strings = (
-      #1056#1072#1089#1087#1088#1086#1089#1090#1088#1072#1085#1103#1077#1090#1089#1103' '#1087#1086' '#1083#1080#1094#1077#1085#1079#1080#1080' GNU GPL'
-      '')
-    ParentFont = False
-    TabOrder = 0
-    OnClick = AboutMemoClick
   end
   object OKButt: TBitBtn
     Left = 101
@@ -495,7 +476,7 @@ object AboutForm: TAboutForm
       FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
       FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
     Layout = blGlyphRight
-    TabOrder = 1
+    TabOrder = 0
     OnClick = OKButtClick
   end
   object AboutMemoFull: TMemo
@@ -508,23 +489,58 @@ object AboutForm: TAboutForm
     Font.Charset = RUSSIAN_CHARSET
     Font.Color = clBlack
     Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Style = []
+    Font.Name = 'Verdana'
+    Font.Style = [fsBold]
     Lines.Strings = (
-      #1042' '#1087#1088#1086#1094#1077#1089#1089#1077' '#1088#1072#1079#1088#1072#1073#1086#1090#1082#1080'...'
-      
-        '----------------------------------------------------------------' +
-        '--'
+      #1056#1072#1072#1079#1088#1072#1073#1072#1090#1099#1074#1072#1077#1090#1089#1103'.'
+      #1042#1099#1087#1086#1083#1085#1077#1085#1086' '#1087#1088#1080#1084#1077#1088#1085#1086' '#1085#1072' 70%'
+      '----------------------------------------------'
       #1054#1054#1054' "'#1050#1072#1087#1080#1090#1072#1083' '#1052#1057'" ('#1057') 2021'
-      ''
       #1056#1072#1079#1088#1072#1073#1086#1090#1095#1080#1082': '#1055#1086#1075#1086#1089#1103#1085' '#1040#1088#1090#1077#1084' '#1042#1080#1090#1072#1083#1100#1077#1074#1080#1095
-      
-        '----------------------------------------------------------------' +
-        '---'
-      
-        '                                                         '#1042#1077#1088#1089#1080#1103' ' +
-        '0.000.00-2')
+      '----------------------------------------------'
+      '                                      '#1042#1077#1088#1089#1080#1103' 0.000.00-3')
     ParentFont = False
+    TabOrder = 1
+  end
+  object Panel1: TPanel
+    Left = 177
+    Top = 104
+    Width = 104
+    Height = 15
+    Cursor = crHandPoint
+    BevelOuter = bvNone
     TabOrder = 2
+    OnClick = urlLinkClick
+  end
+  object Panel2: TPanel
+    Left = 16
+    Top = 72
+    Width = 283
+    Height = 27
+    Cursor = crHandPoint
+    BevelOuter = bvNone
+    TabOrder = 3
+    OnClick = AboutMemoClick
+    object AboutMemo: TMemo
+      Left = 8
+      Top = 2
+      Width = 265
+      Height = 18
+      Cursor = crHandPoint
+      BorderStyle = bsNone
+      Color = clBtnFace
+      Enabled = False
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -13
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold, fsUnderline]
+      Lines.Strings = (
+        #1056#1072#1089#1087#1088#1086#1089#1090#1088#1072#1085#1103#1077#1090#1089#1103' '#1087#1086' '#1083#1080#1094#1077#1085#1079#1080#1080' GNU GPL'
+        '')
+      ParentFont = False
+      TabOrder = 0
+      OnClick = AboutMemoClick
+    end
   end
 end

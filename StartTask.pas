@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Data.DB, Data.Win.ADODB,
   ADOConnection1, ADOQuery1, ADOStoredProc1, Vcl.DBCtrls, Vcl.Buttons,
-  Vcl.ComCtrls, Vcl.TabNotBk, Vcl.ExtCtrls, TypInfo, Clipbrd, UITypes;
+  Vcl.ComCtrls, Vcl.TabNotBk, Vcl.ExtCtrls, TypInfo, Clipbrd, UITypes,IOUtils;
 
 type
   TStartTaskForm = class(TForm)
@@ -40,7 +40,7 @@ type
     procedure SaveButClick(Sender: TObject);
     procedure Stat_101_worker;
     procedure Stat_111_worker;
-    procedure Stat_201_worker;
+    procedure Stat_201_worker(wcode:integer);
     procedure Stat_211_worker;
     procedure Stat_221_worker;
     procedure Stat_300_worker;
@@ -52,6 +52,12 @@ type
     procedure AddArchButtonClick(Sender: TObject);
     function GetTfomsPath(userpth:string):string;
     procedure FullInfList(tcode:integer);
+    procedure MarkDubl(tablename:string);
+    function CheckDblFull:boolean;
+    function isInBipUnld:boolean;
+    procedure IBListCreate(mAt,mTo:string;TCde:integer);
+    function GetWDPth:string;
+    procedure SaveEditChange(Sender: TObject);
   private
     { Private declarations }
   public
@@ -113,7 +119,17 @@ ind:=statmemo.lines.count-1;
   if statmemo.Lines[ind] = 'Хотите создать список сейчас?'
       then statmemo.lines.Add('Создание списка оповещения отменено...');
 
+  if statmemo.Lines[ind] = 'Хотите пометить дубликаты контактов?'
+      then begin
+            statmemo.lines.Add('Дубликаты контактов не помечены...');
+            Stat_201_worker(1);
+           end;
 
+   if statmemo.Lines[ind] = 'Хотите создать список для загрузки в Инфобип?'
+     then begin
+      statmemo.lines.Add('Список для Инфобип не создан...');
+     // Stat_201_worker(2);
+     end;
 end;
 
 procedure TStartTaskForm.SaveButClick(Sender: TObject);
@@ -133,6 +149,20 @@ end;
 
 end;
 
+procedure TStartTaskForm.SaveEditChange(Sender: TObject);
+begin
+if DirectoryExists(saveedit.Text) then saveedit.Color:=clWindow
+  else saveedit.Color:=clRed;
+end;
+
+function TStartTaskForm.GetWDPth:string;
+begin
+ ADOQueryStart.Close;
+ ADOQueryStart.SQL.Text:='select WDpth from settings';
+ ADOQueryStart.Open;
+result:=adoquerystart.FieldByName('WDpth').AsString;
+end;
+
 function TStartTaskForm.GetTfomsPath(userpth:string):string;
 var fname:string;
 begin
@@ -142,6 +172,36 @@ fname:=extractfilename(userpth);
  ADOQueryStart.Open;
 
 result:=adoquerystart.FieldByName('WDpth').AsString+'\Оповещения\'+TrimRight(infnamewrklabel.Caption)+'\'+fname;
+end;
+
+procedure TStartTaskForm.MarkDubl(tablename:string);
+var dmobi,dmail : string;
+begin
+statmemo.lines.Add('Выполняется поиск дубликатов контактов...');
+ ADOQueryStart.Close;
+ ADOQueryStart.SQL.clear;
+ ADOQueryStart.SQL.Add(' ;WITH CTE AS( SELECT *, RN = ROW_NUMBER()OVER(PARTITION BY [Мобильный] ORDER BY [Мобильный]) FROM '+tablename+' where [Мобильный] is not null) update CTE set NotDublMobil=1 where RN=1 and [Мобильный] is not null ;WITH CTE AS(SELECT *,RN = ROW_NUMBER()OVER(PARTITION BY [mail] ORDER BY [mail]) FROM '+tablename+' where [mail] is not null ) update CTE set NotDublMail=1 where RN=1 and [mail] is not null');
+ ADOQueryStart.SQL.Add('select count(*) as Dmobil from '+tablename+' where [Мобильный] is not null and NotDublMobil is NULL  ');
+ ADOQueryStart.Open;
+dmobi:=adoquerystart.FieldByName('Dmobil').AsString;
+
+ ADOQueryStart.Close;
+ ADOQueryStart.SQL.clear;
+ ADOQueryStart.SQL.Add(' select count(*) as Dmail from '+tablename+' where mail is not null and NotDublMail is NULL ');
+ ADOQueryStart.Open;
+dmail:=adoquerystart.FieldByName('Dmail').AsString;
+
+ADOQueryStart.Close;
+ADOQueryStart.SQL.clear;
+ADOQueryStart.SQL.Add('insert into sp_Inf (Inf_id,isDublCheck,DublMobiCnt,DublMailCnt) values ((select Inf_id from Infs where name='''+infnamewrklabel.Caption+'''),1,'+dmobi+','+dmail+') select 1');
+ADOQueryStart.Open;
+
+ statmemo.lines.Add('Все дубликаты контактов помечены успешно!');
+ statmemo.lines.Add('Всего найдено: '+dmobi+' дублей мобильных.');
+ statmemo.lines.Add('Всего найдено: '+dmail+' дублей E-Mail.');
+
+
+Stat_201_worker(1);
 end;
 
 procedure TStartTaskForm.FullInfList(tcode:integer);
@@ -183,10 +243,45 @@ begin
   mainform.ADOQuery.open;
 end;
 
+procedure TStartTaskForm.IBListCreate(mAt,mTo:string;TCde:integer);
+var wdpth:string;
+begin
+if DirectoryExists(saveedit.Text) then
+begin
+ adoquerystart.Close;
+ ADOQueryStart.SQL.Clear;
+ ADOQueryStart.SQL.text:='select * from settings';
+ ADOQueryStart.Open;
+  if adoquerystart.FieldByName('useNetWD').AsString='1' then
+      wdpth:=adoquerystart.FieldByName('WDNetpth').AsString
+        else wdpth:=adoquerystart.FieldByName('WDpth').AsString;
+
+  TDirectory.CreateDirectory(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип');
+
+  CopyFile(PChar(wdpth+'\Шаблоны\В Инфобип\To_Ib.xlsx'), PChar(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx'), false);
+
+  ADOStoredProcStart.ProcedureName:= 'CreateIBList';
+       ADOStoredProcStart.Parameters.Refresh;
+       ADOStoredProcStart.Parameters.ParamByName('@TempFile').Value:=GetWDPth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx';
+       ADOStoredProcStart.Parameters.ParamByName('@mAt').Value:=mAt;
+       ADOStoredProcStart.Parameters.ParamByName('@mTo').Value:=mTo;
+       ADOStoredProcStart.Parameters.ParamByName('@TCde').Value:=TCde;
+       application.ProcessMessages;
+       ADOStoredProcStart.ExecProc;
+  CopyFile(PChar(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx'), PChar(saveedit.Text+'\To_Ib.xlsx'), false);
+  statmemo.lines.Add('Операция успешно завершена!');
+  MainForm.StatusBar.Panels[0].Text:='Список ддя загрузки в Инфобип создан успешно!!';
+  messagedlg( 'Список ддя загрузки в Инфобип успешно создан!' , mtInformation, [mbOk], 0, mbOk);
+end
+  else begin
+    saveedit.Color:=clred;
+    messagedlg( 'Укажите папку в которую будет сохранен список!' , mterror, [mbOk], 0, mbOk);
+   end;
+end;
 
 procedure TStartTaskForm.YesButtonClick(Sender: TObject);
 var ind,tcode:integer;
-tname,tpath:string;
+tname,tpath,mat,mto:string;
 begin
 ind:=statmemo.lines.count-1;
 ADOQueryStart.Close;
@@ -195,6 +290,9 @@ ADOQueryStart.Open;
 tname:=adoquerystart.FieldByName('tremark').AsString;
 tpath:=adoquerystart.FieldByName('Tfoms_path').AsString;
 tcode:=adoquerystart.FieldByName('tcode').AsInteger;
+mat:=adoquerystart.FieldByName('MounthAt').AsString;
+mto:=adoquerystart.FieldByName('MounthTo').AsString;
+
 // Новое - статус 101
  if statmemo.Lines[ind] = 'Все готово для начала информирования, запустить немедленно?'
   then CreateInfList(GetTfomsPath(tpath),false,false,Trim(tname),tcode);
@@ -209,6 +307,12 @@ tcode:=adoquerystart.FieldByName('tcode').AsInteger;
   if statmemo.Lines[ind] = 'Хотите создать список сейчас?'
       then FullInfList(tcode);
 
+// Открыто - статус 201
+  if statmemo.Lines[ind] = 'Хотите пометить дубликаты контактов?'
+      then MarkDubl(tname);
+
+   if statmemo.Lines[ind] = 'Хотите создать список для загрузки в Инфобип?'
+      then IBListCreate(mat,mto,tcode);
 end;
 
 procedure TStartTaskForm.AddArchButtonClick(Sender: TObject);
@@ -243,7 +347,7 @@ end;
 
 procedure  TStartTaskForm.CreateInfList(tfomsfilename:string;rename:boolean;oldexist:boolean;tname:string;tCode:integer);
 var nowdate,renamer:string;
-    tes:boolean;
+//    tes:boolean;
 begin
       nowdate:=FormatDateTime('dd_mm_yyyy', Now);
       ADOQueryStart.Close;
@@ -322,14 +426,57 @@ end;
 
 procedure TStartTaskForm.Stat_111_worker;
 begin
-statmemo.lines.Add('Список информимрование не найден.');
-statmemo.lines.Add('Хотите создать список сейчас?');
+statmemo.lines.Add('Список информимрования не создан.');
+statmemo.lines.Add('Хотите создать список его сейчас?');
 end;
 
-procedure TStartTaskForm.Stat_201_worker;
+function TStartTaskForm.CheckDblFull:boolean;
 begin
- //code
+//Проверка на пометку дублей
+ ADOQueryStart.Close;
+ ADOQueryStart.SQL.clear;
+ ADOQueryStart.SQL.Add('if (select isDublCheck from sp_Inf where inf_id = (select inf_id from infs where name='''+infnamewrklabel.Caption+'''))=1 select * from sp_Inf where Inf_id=(select Inf_id from Infs where name='''+infnamewrklabel.Caption+''') else select 0 as nothing ');
+ ADOQueryStart.Open;
+try
+ if adoquerystart.FieldByName('nothing').AsInteger=1 then result:=false;
+  except
+    result:=true;
+    statmemo.lines.Add('Все дубликаты контактов помечены успешно!');
+    statmemo.lines.Add('Всего найдено: '+adoquerystart.FieldByName('DublMobiCnt').AsString+' дублей мобильных.');
+    statmemo.lines.Add('Всего найдено: '+adoquerystart.FieldByName('DublMailCnt').AsString+' дублей E-Mail.');
 end;
+end;
+
+function TStartTaskForm.isInBipUnld:boolean;
+begin
+ ADOQueryStart.Close;
+     ADOQueryStart.SQL.clear;
+     ADOQueryStart.SQL.Add('select InBipLstUnld from sp_Inf where inf_id = (select inf_id from infs where name='''+infnamewrklabel.Caption+''')');
+     ADOQueryStart.Open;
+   if adoquerystart.FieldByName('InBipLstUnld').AsString='1' then result:=true
+    else result:=false;
+end;
+
+procedure TStartTaskForm.Stat_201_worker(wcode:integer);
+begin
+ if wcode=0
+    then begin
+     if not CheckDblFull
+      then begin
+        statmemo.lines.Add('Хотите пометить дубликаты контактов?');
+        exit;
+      end;
+    end;
+
+if not isInBipUnld
+  then begin
+    statmemo.lines.Add('Хотите создать список для загрузки в Инфобип?');
+    exit;
+  end;
+
+
+end;
+
 
 procedure TStartTaskForm.Stat_211_worker;
 begin
@@ -343,6 +490,7 @@ end;
 
 procedure TStartTaskForm.Stat_300_worker;
 begin
+statmemo.lines.Add('Информирование завершено.');
 statmemo.lines.Add('Рекомендуется перевести данное оповещение в архив.');
 end;
 
@@ -420,7 +568,10 @@ if infnamewrklabel.Caption<>'' then
         then Stat_111_worker;
 
      if stcode = 201
-       then Stat_201_worker;
+       then begin
+        statmemo.lines.Add('Список информирования создан и заполнен.');
+        Stat_201_worker(0);
+       end;
 
      if stcode = 211
        then Stat_211_worker;

@@ -49,7 +49,7 @@ object StartTaskForm: TStartTaskForm
         TabOrder = 0
         object SaveBut: TSpeedButton
           Left = 350
-          Top = 16
+          Top = 13
           Width = 107
           Height = 34
           Caption = #1042#1099#1073#1088#1072#1090#1100
@@ -138,6 +138,7 @@ object StartTaskForm: TStartTaskForm
           Width = 328
           Height = 21
           TabOrder = 0
+          OnChange = SaveEditChange
         end
       end
       object GroupBox1: TGroupBox
