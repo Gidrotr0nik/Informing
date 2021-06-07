@@ -54,6 +54,7 @@ type
     Statmemo: TRichEdit;
     InfsStatMemo: TRichEdit;
     InfMemo: TRichEdit;
+    ProgressBar: TProgressBar;
     procedure FormCreate(Sender: TObject);
     procedure MainDBGridDrawColumnCell(Sender: TObject; const Rect: TRect;
       DataCol: Integer; Column: TColumn; State: TGridDrawState);
@@ -196,6 +197,15 @@ while i <= MainDBGrid.Columns.Count - 3 do
       i:=i+1;
     end;
 
+{   with  ProgressBar  do
+   begin
+    Parent := StatusBar;
+    Position := 100;
+    Top := 2;
+    Left := 0;
+    Height := StatusBar.Height - Top;
+    Width := StatusBar.Panels[1].Width - Left;
+   end ;    }
  end;
 
  procedure  TMainForm.AddColoredLine(ARichEdit: TRichEdit; AText: string; AColor: TColor);

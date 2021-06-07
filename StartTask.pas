@@ -83,6 +83,7 @@ end;
 procedure TStartTaskForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
 workingtabnote.PageIndex:=0;
+mainform.ProgressBar.Position:=0;
 end;
 
 procedure TStartTaskForm.FormCreate(Sender: TObject);
@@ -246,8 +247,10 @@ end;
 procedure TStartTaskForm.IBListCreate(mAt,mTo:string;TCde:integer);
 var wdpth:string;
 begin
+
 if DirectoryExists(saveedit.Text) then
 begin
+statmemo.lines.Add('Пожалуйста подождите, идет создание списка...');
  adoquerystart.Close;
  ADOQueryStart.SQL.Clear;
  ADOQueryStart.SQL.text:='select * from settings';
@@ -255,24 +258,43 @@ begin
   if adoquerystart.FieldByName('useNetWD').AsString='1' then
       wdpth:=adoquerystart.FieldByName('WDNetpth').AsString
         else wdpth:=adoquerystart.FieldByName('WDpth').AsString;
-
-  TDirectory.CreateDirectory(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип');
-
-  CopyFile(PChar(wdpth+'\Шаблоны\В Инфобип\To_Ib.xlsx'), PChar(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx'), false);
-
-  ADOStoredProcStart.ProcedureName:= 'CreateIBList';
+        mainform.ProgressBar.Position:=20;
+        TDirectory.CreateDirectory(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип');
+        mainform.ProgressBar.Position:=35;
+        CopyFile(PChar(wdpth+'\Шаблоны\В Инфобип\To_Ib.xlsx'), PChar(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx'), false);
+        mainform.ProgressBar.Position:=40;
+       ADOStoredProcStart.ProcedureName:= 'CreateIBList';
        ADOStoredProcStart.Parameters.Refresh;
        ADOStoredProcStart.Parameters.ParamByName('@TempFile').Value:=GetWDPth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx';
        ADOStoredProcStart.Parameters.ParamByName('@mAt').Value:=mAt;
        ADOStoredProcStart.Parameters.ParamByName('@mTo').Value:=mTo;
        ADOStoredProcStart.Parameters.ParamByName('@TCde').Value:=TCde;
        application.ProcessMessages;
-       ADOStoredProcStart.ExecProc;
-  CopyFile(PChar(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx'), PChar(saveedit.Text+'\To_Ib.xlsx'), false);
+    mainform.ProgressBar.Position:=55;
+    ADOStoredProcStart.ExecProc;
+    mainform.ProgressBar.Position:=80;
+    CopyFile(PChar(wdpth+'\Оповещения\'+Trim(infnamewrklabel.Caption)+'\В Инфобип\To_Ib.xlsx'), PChar(saveedit.Text+'\To_Ib.xlsx'), false);
+    mainform.ProgressBar.Position:=90;
+
+    ADOQueryStart.Close;
+    ADOQueryStart.SQL.Text:='  update sp_inf set InBipLstUnld=1 from infs inf left join sp_inf si on inf.inf_id=si.Inf_id where inf.name = '''+infnamewrklabel.Caption+''' select * from sp_inf';
+    ADOQueryStart.Open;
+
+    ADOQueryStart.Close;
+    ADOQueryStart.SQL.Text:= 'update sp_inf set InBipLstUnldPth='''+saveedit.Text+''' from infs inf left join sp_Inf spi on inf.inf_id=spi.inf_id where inf.name='''+infnamewrklabel.Caption+''' select 1';
+    ADOQueryStart.Open;
+
+
+
   statmemo.lines.Add('Операция успешно завершена!');
-  MainForm.StatusBar.Panels[0].Text:='Список ддя загрузки в Инфобип создан успешно!!';
-  messagedlg( 'Список ддя загрузки в Инфобип успешно создан!' , mtInformation, [mbOk], 0, mbOk);
-end
+
+  MainForm.StatusBar.Panels[0].Text:='Список для загрузки в Инфобип создан успешно!';
+
+  mainform.ProgressBar.Position:=100;
+
+  messagedlg( 'Список для загрузки в Инфобип успешно создан!' , mtInformation, [mbOk], 0, mbOk);
+
+  end
   else begin
     saveedit.Color:=clred;
     messagedlg( 'Укажите папку в которую будет сохранен список!' , mterror, [mbOk], 0, mbOk);
@@ -453,7 +475,8 @@ begin
      ADOQueryStart.SQL.clear;
      ADOQueryStart.SQL.Add('select InBipLstUnld from sp_Inf where inf_id = (select inf_id from infs where name='''+infnamewrklabel.Caption+''')');
      ADOQueryStart.Open;
-   if adoquerystart.FieldByName('InBipLstUnld').AsString='1' then result:=true
+//showmessage
+   if adoquerystart.FieldByName('InBipLstUnld').AsInteger=1 then result:=true
     else result:=false;
 end;
 
@@ -472,8 +495,13 @@ if not isInBipUnld
   then begin
     statmemo.lines.Add('Хотите создать список для загрузки в Инфобип?');
     exit;
+  end else begin
+     ADOQueryStart.SQL.clear;
+     ADOQueryStart.SQL.Add('select InBipLstUnldPth from sp_Inf spi left join infs inf on spi.Inf_id=inf.inf_id where inf.name='''+infnamewrklabel.Caption+'''');
+     ADOQueryStart.Open;
+     saveedit.text := adoquerystart.FieldByName('InBipLstUnldPth').asString;
+    statmemo.lines.Add('Cписок для загрузки в Инфобип создан!');
   end;
-
 
 end;
 
@@ -548,6 +576,7 @@ var inftype:string;
 
 begin
 workingtabnote.PageIndex:=0;
+
 if infnamewrklabel.Caption<>'' then
    begin
     statmemo.lines.Clear;

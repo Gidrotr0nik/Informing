@@ -36,8 +36,10 @@ object MainForm: TMainForm
       Align = alTop
       BevelKind = bkTile
       TabOrder = 0
+      ExplicitLeft = 10
+      ExplicitTop = 25
       object TableButton: TSpeedButton
-        Left = 109
+        Left = 78
         Top = 1
         Width = 40
         Height = 35
@@ -121,7 +123,7 @@ object MainForm: TMainForm
         OnClick = TableButtonClick
       end
       object ControlPanelButton: TSpeedButton
-        Left = 148
+        Left = 117
         Top = 1
         Width = 40
         Height = 35
@@ -205,7 +207,7 @@ object MainForm: TMainForm
         OnClick = ControlPanelButtonClick
       end
       object SettingsButton: TSpeedButton
-        Left = 258
+        Left = 195
         Top = 1
         Width = 40
         Height = 35
@@ -289,7 +291,7 @@ object MainForm: TMainForm
         OnClick = SettingsButtonClick
       end
       object ChangeTaskButton: TSpeedButton
-        Left = 219
+        Left = 156
         Top = 1
         Width = 40
         Height = 35
@@ -653,7 +655,7 @@ object MainForm: TMainForm
           end
           object GroupBox2: TGroupBox
             Left = 3
-            Top = 7
+            Top = 2
             Width = 355
             Height = 192
             Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1087#1072#1088#1072#1084#1077#1090#1088#1099' '#1087#1088#1086#1075#1088#1072#1084#1084#1099
@@ -685,10 +687,10 @@ object MainForm: TMainForm
             Caption = #1057#1090#1072#1090#1080#1089#1090#1080#1082#1072' '#1087#1086' '#1086#1087#1086#1074#1077#1097#1077#1085#1080#1102
             TabOrder = 1
             object InfNameLabel: TDBText
-              Left = 24
-              Top = 19
+              Left = 25
+              Top = 15
               Width = 265
-              Height = 30
+              Height = 25
               DataField = #1048#1084#1103' '#1086#1087#1086#1074#1077#1097#1077#1085#1080#1103
               DataSource = DataSource
               Font.Charset = RUSSIAN_CHARSET
@@ -715,9 +717,9 @@ object MainForm: TMainForm
           end
           object InfsStatMemo: TRichEdit
             Left = 6
-            Top = 219
+            Top = 218
             Width = 352
-            Height = 121
+            Height = 119
             Font.Charset = RUSSIAN_CHARSET
             Font.Color = clWindowText
             Font.Height = -11
@@ -732,8 +734,6 @@ object MainForm: TMainForm
           Left = 0
           Top = 0
           Caption = 'ControlPanel'
-          ExplicitWidth = 0
-          ExplicitHeight = 0
           object MainDBGrid: TDBGrid
             AlignWithMargins = True
             Left = 3
@@ -808,6 +808,13 @@ object MainForm: TMainForm
       item
         Width = 50
       end>
+  end
+  object ProgressBar: TProgressBar
+    Left = 500
+    Top = 394
+    Width = 187
+    Height = 19
+    TabOrder = 2
   end
   object MainMenu: TMainMenu
     Left = 409
